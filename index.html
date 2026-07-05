@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#101418">
+<title>Auditoría de Dolores</title>
+<style>
+  :root{
+    --bg:#101418; --card:#1a2129; --card2:#222b35; --line:#2e3a46;
+    --txt:#e8edf2; --dim:#93a3b1; --acc:#ff7a1a; --acc2:#ffb26b;
+    --ok:#3ddc84; --warn:#ffd166; --bad:#ff5d5d; --info:#4dabf7;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px}
+  #app{max-width:560px;margin:0 auto;padding:14px 14px 110px}
+  h1{font-size:1.25rem;margin:.3em 0}
+  h2{font-size:1.05rem;margin:.8em 0 .4em}
+  p{line-height:1.45}
+  .dim{color:var(--dim)} .small{font-size:.85rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+  .card2{background:var(--card2)}
+  .say{background:#14202b;border-left:4px solid var(--info);border-radius:10px;
+    padding:10px 12px;margin:8px 0;font-size:1.02rem;line-height:1.45}
+  .say b{color:var(--info)}
+  .btn{display:block;width:100%;border:none;border-radius:12px;padding:15px;
+    font-size:1.05rem;font-weight:700;cursor:pointer;margin:8px 0;color:#141414;background:var(--acc)}
+  .btn.sec{background:var(--card2);color:var(--txt);border:1px solid var(--line);font-weight:600}
+  .btn.mini{width:auto;display:inline-block;padding:8px 14px;font-size:.9rem;margin:4px 6px 4px 0}
+  .btn.ghost{background:none;border:1px dashed var(--line);color:var(--dim)}
+  .btn:active{transform:scale(.985)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+  .chip{padding:9px 14px;border-radius:999px;border:1px solid var(--line);
+    background:var(--card2);color:var(--txt);font-size:.95rem;cursor:pointer}
+  .chip.on{background:var(--acc);border-color:var(--acc);color:#141414;font-weight:700}
+  input[type=text],input[type=number],textarea{
+    width:100%;background:#0d1319;border:1px solid var(--line);border-radius:10px;
+    color:var(--txt);padding:11px;font-size:1rem;margin:6px 0;font-family:inherit}
+  textarea{min-height:64px;resize:vertical}
+  label{font-size:.85rem;color:var(--dim);display:block;margin-top:8px}
+  .prog{height:6px;background:var(--card2);border-radius:99px;margin:8px 0 4px;overflow:hidden}
+  .prog>div{height:100%;background:var(--acc);border-radius:99px;transition:width .3s}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+  .back{background:none;border:none;color:var(--dim);font-size:1rem;cursor:pointer;padding:6px}
+  .tag{display:inline-block;padding:3px 10px;border-radius:99px;font-size:.78rem;font-weight:700}
+  .tag.hot{background:#3a1f12;color:var(--acc2)} .tag.warm{background:#33301a;color:var(--warn)}
+  .tag.cold{background:#152736;color:var(--info)} .tag.done{background:#15301f;color:var(--ok)}
+  .money{color:var(--acc2);font-weight:800}
+  .visit{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer}
+  .flagrow{display:flex;gap:10px;align-items:flex-start;padding:9px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+  .flagrow:last-child{border-bottom:none}
+  .flagrow input{width:22px;height:22px;margin-top:1px;accent-color:var(--acc);flex:none}
+  .dolor{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:var(--card2)}
+  .dolor .cost{font-size:1.05rem;margin-top:6px}
+  #sos{position:fixed;right:14px;bottom:18px;z-index:50;border:none;border-radius:999px;
+    padding:13px 16px;font-size:1rem;font-weight:800;background:var(--bad);color:#fff;
+    box-shadow:0 4px 16px rgba(0,0,0,.5);cursor:pointer;display:none}
+  #modal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:60;display:none;
+    align-items:center;justify-content:center;padding:20px}
+  #modal .box{background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:20px;max-width:420px;width:100%}
+  .center{text-align:center}
+  .num{display:inline-flex;width:26px;height:26px;border-radius:99px;background:var(--acc);
+    color:#141414;font-weight:800;align-items:center;justify-content:center;margin-right:8px;flex:none}
+  .rowline{display:flex;align-items:center;gap:8px}
+  pre.script{white-space:pre-wrap;background:#0d1319;border:1px solid var(--line);
+    border-radius:10px;padding:12px;font-family:inherit;font-size:.95rem;line-height:1.5}
+  a{color:var(--info)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<button id="sos" onclick="sosOpen()">🆘 Se estancó</button>
+<div id="modal" onclick="modalClose(event)"><div class="box" id="modalBox"></div></div>
+
+<script>
+/* ============================================================
+   AUDITORÍA DE DOLORES — entrevista guiada para PyMEs locales
+   Basada en 01_PLAYBOOK_DESCUBRIMIENTO.md + 02_SERVICIOS_PRECIOS.md
+   Giro 2026-05-28: se venden RESULTADOS (tiempo/plata), nunca "IA".
+   Datos: solo en localStorage del dispositivo.
+   ============================================================ */
+
+const LS = 'auditoria-dolores-v1';
+const LSCFG = 'auditoria-dolores-cfg';
+
+let cfg = JSON.parse(localStorage.getItem(LSCFG) || '{"valorHora":8000,"miNombre":"Fernando","miFono":"+56953910713"}');
+let visitas = JSON.parse(localStorage.getItem(LS) || '[]');
+let V = null;          // visita activa
+let paso = 0;          // paso actual de la entrevista
+
+const save = () => { localStorage.setItem(LS, JSON.stringify(visitas)); };
+const saveCfg = () => { localStorage.setItem(LSCFG, JSON.stringify(cfg)); };
+const $ = id => document.getElementById(id);
+const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clp = n => '$' + Math.round(n).toLocaleString('es-CL');
+
+/* ---------- contenido del playbook ---------- */
+
+const RUBROS = ['Ferretería','Almacén/Minimarket','Taller/Maestranza','Restaurante/Café','Servicios','Campo/Leña','Construcción','Otro'];
+
+const FREQ = { diario:{txt:'Todos los días', mes:26}, semanal:{txt:'Cada semana', mes:4.3}, mensual:{txt:'Una vez al mes', mes:1} };
+
+const AREAS = {
+  inventario:  {txt:'Inventario / stock',        sol:'Control de inventario simple por Telegram: entradas y salidas desde el celular, stock al día sin planillas', rango:'$300.000 – $500.000'},
+  papeleo:     {txt:'Papeleo / planillas a mano', sol:'Lectura automática de planillas y documentos por foto: le sacas foto y queda digitado sin errores', rango:'$300.000 – $500.000'},
+  cotizaciones:{txt:'Cotizaciones / presupuestos',sol:'Cotizador rápido: presupuestos profesionales en minutos en vez de horas', rango:'$150.000 – $300.000'},
+  cobros:      {txt:'Fiados / cobros',            sol:'Control de fiados con recordatorio de cobro por WhatsApp: se acabó el cuaderno y la plata olvidada', rango:'$150.000 – $300.000'},
+  atencion:    {txt:'Atención de consultas',      sol:'Respuestas automáticas por WhatsApp/Telegram para las preguntas repetidas (precios, horarios, stock)', rango:'$400.000 – $800.000'},
+  ventas:      {txt:'Pocos clientes / visibilidad',sol:'Página web + aparecer en Google Maps y buscadores: que los clientes te encuentren solos', rango:'$150.000 – $300.000'},
+  registro:    {txt:'Registro de salidas/ventas', sol:'Registro de ventas o salidas con foto desde el celular + reporte diario automático', rango:'$300.000 – $500.000'},
+  otro:        {txt:'Otro',                       sol:'Solución a medida según el diagnóstico detallado', rango:'según diagnóstico'}
+};
+
+const ASESINAS = [
+  '¿Si este proceso no existiera, cómo operaría su negocio?',
+  '¿Cuánto le cuesta al negocio esa ineficiencia, más o menos, al mes?',
+  '¿Qué es lo que NO quiere hacer nunca más en su negocio?',
+  'Si tuviera una varita mágica, ¿qué haría que se hiciera solo primero?',
+  '¿Por qué cree que todavía no han resuelto esto?'
+];
+
+const GREEN = [
+  'Identificó 2 o más dolores claros',
+  'Sabe (o estimó) cuánto tiempo/plata pierde',
+  'Preguntó por plazos o precios',
+  'Se mostró dispuesto a agendar la asesoría',
+  'Me pidió referencias o ejemplos'
+];
+const RED = [
+  '"Ya tenemos un sistema que lo hace"',
+  '"No tenemos presupuesto" (cortante)',
+  '"Esto siempre se ha hecho así"',
+  '"Déjame consultarlo con..." (evasivo)'
+];
+
+/* Bloques A, B, D, E del playbook (C = dolores, tiene pantalla propia) */
+const BLOQUES = [
+  { id:'A', titulo:'Conocer el negocio', obj:'Entender la escala. Todavía NO hables de problemas.',
+    qs:[
+      {k:'anios',   say:'¿Cuánto tiempo lleva con el negocio?', chips:['Menos de 1 año','1 a 5 años','5 a 15 años','Más de 15']},
+      {k:'personas',say:'¿Cuántas personas trabajan acá?',      chips:['Solo el dueño','2 a 5','6 a 15','Más de 15']},
+      {k:'procesos',say:'¿Cuáles son las 3 tareas más importantes del día a día?', nota:true},
+      {k:'diatipico',say:'¿Cómo es un día típico? ¿Qué hace usted personalmente?', nota:true}
+    ]},
+  { id:'B', titulo:'Cómo trabajan hoy', obj:'Mapear el flujo real. Anota dónde se pierde información.',
+    qs:[
+      {k:'herr',  say:'¿Con qué llevan el control hoy? ¿Cuaderno, Excel, algún programa?', chips:['Cuaderno/papel','Excel','Un programa','Pura memoria']},
+      {k:'comu',  say:'¿Cómo se comunican con clientes y proveedores?', chips:['WhatsApp','Teléfono','Presencial','Correo']},
+      {k:'pierde',say:'¿Dónde se les pierde información o se producen confusiones?', nota:true}
+    ]},
+  { id:'D', titulo:'Su sueño', obj:'Que él diga la prioridad. Tú solo escucha y anota.',
+    qs:[
+      {k:'uno',    say:'Si pudiera hacer que UNA tarea se hiciera sola, ¿cuál elegiría?', nota:true},
+      {k:'ahorro', say:'¿Cuánto tiempo o plata cree que se ahorraría con eso?', nota:true},
+      {k:'antes',  say:'¿Ha intentado resolverlo antes? ¿Qué pasó?', chips:['Nunca lo intentó','Lo intentó y no resultó','Lo tiene a medias'], nota:true}
+    ]},
+  { id:'E', titulo:'Realismo', obj:'Presupuesto y tiempos, sin presionar.',
+    qs:[
+      {k:'abierto',say:'¿Estaría dispuesto a probar una herramienta nueva si le ahorra ese tiempo?', chips:['Sí, de una','Con dudas','Difícil']},
+      {k:'quien',  say:'¿Quién la usaría en el día a día?', chips:['El dueño','Un empleado','Ambos']},
+      {k:'plazo',  say:'Si algo le hiciera sentido, ¿para cuándo le urge?', chips:['Ya, urgente','Este mes','2-3 meses','Sin apuro']}
+    ]}
+];
+
+/* Pasos: 0 datos, 1 A, 2 B, 3 dolores(C), 4 D, 5 E, 6 señales, 7 diagnóstico */
+const PASOS = ['Datos','Bloque A','Bloque B','Dolores','Bloque D','Bloque E','Señales','Diagnóstico'];
+
+/* ---------- helpers de visita ---------- */
+
+function nuevaVisita(){
+  V = { id:Date.now(), fecha:new Date().toISOString().slice(0,10),
+        negocio:{nombre:'',rubro:'',dueno:'',fono:''},
+        r:{}, dolores:[], flags:{g:[],r:[]}, estado:'pre' };
+  visitas.unshift(V); save();
+  paso = 0; renderPrevisita();
+}
+
+function costoDolor(d){
+  if(!d.freq || !d.horas) return 0;
+  return (FREQ[d.freq]?.mes || 0) * parseFloat(d.horas) * cfg.valorHora;
+}
+function horasMes(d){
+  if(!d.freq || !d.horas) return 0;
+  return (FREQ[d.freq]?.mes || 0) * parseFloat(d.horas);
+}
+function totalMes(v){ return v.dolores.reduce((s,d)=>s+costoDolor(d),0); }
+
+function veredicto(v){
+  const g = v.flags.g.length, r = v.flags.r.length;
+  if(r >= 2) return {t:'frío', cls:'cold', rec:'Agradece, deja tu contacto y no presiones. No es tu cliente hoy — mantén la puerta abierta.'};
+  if(g >= 2 && r === 0) return {t:'CALIENTE', cls:'hot', rec:'¡Cierra AHORA! Ofrece la asesoría de $10.000 y propone fecha concreta esta misma semana.'};
+  return {t:'tibio', cls:'warm', rec:'Manda el resumen por WhatsApp hoy mismo y agenda un seguimiento en 3-4 días.'};
+}
+
+/* ---------- render: HOME ---------- */
+
+function renderHome(){
+  V = null; sosHide();
+  let list = '';
+  if(!visitas.length){
+    list = `<div class="card center dim">Aún no hay visitas.<br>Parte con la primera — el miedo se pasa a la segunda pregunta. 💪</div>`;
+  } else {
+    list = visitas.map(v=>{
+      const ver = v.estado==='done' ? veredicto(v) : null;
+      const tag = ver ? `<span class="tag ${ver.cls}">${ver.t}</span>` : `<span class="tag done">en curso</span>`;
+      const tot = totalMes(v);
+      return `<div class="card visit" onclick="abrirVisita(${v.id})">
+        <div><b>${esc(v.negocio.nombre)||'(sin nombre)'}</b>
+          <div class="small dim">${esc(v.negocio.rubro)||''} · ${v.fecha}${tot?` · pierde <span class="money">${clp(tot)}/mes</span>`:''}</div>
+        </div>${tag}</div>`;
+    }).join('');
+  }
+  $('app').innerHTML = `
+    <div class="topbar"><h1>🎯 Auditoría de Dolores</h1>
+      <button class="back" onclick="configurar()">⚙️</button></div>
+    <p class="dim small">Tu copiloto para la visita: te dice qué preguntar, anota con 2 toques y calcula cuánta plata pierde el negocio.</p>
+    <button class="btn" onclick="nuevaVisita()">➕ Nueva visita</button>
+    ${list}
+    <div class="card small">
+      <b>Respaldo</b><br>
+      <button class="btn sec mini" onclick="exportar()">⬇️ Exportar JSON</button>
+      <button class="btn sec mini" onclick="$('imp').click()">⬆️ Importar</button>
+      <input type="file" id="imp" accept=".json" style="display:none" onchange="importar(this)">
+      <div class="dim">Valor hora usado: ${clp(cfg.valorHora)} (⚙️ para cambiar)</div>
+    </div>`;
+}
+
+function configurar(){
+  const v = prompt('Valor de una hora de trabajo (CLP).\nSe usa para calcular cuánta plata pierde el negocio:', cfg.valorHora);
+  if(v && !isNaN(parseInt(v))){ cfg.valorHora = parseInt(v); saveCfg(); }
+  renderHome();
+}
+
+function abrirVisita(id){
+  V = visitas.find(x=>x.id===id); if(!V) return;
+  if(V.estado==='done'){ renderDiag(); }
+  else { paso = V.paso||0; renderPaso(); }
+}
+
+/* ---------- render: PRE-VISITA (anti-miedo) ---------- */
+
+function renderPrevisita(){
+  sosHide();
+  $('app').innerHTML = `
+    <div class="topbar"><button class="back" onclick="renderHome()">← salir</button><b>Antes de entrar</b><span></span></div>
+    <div class="card">
+      <h2>🧘 Respira. Hoy NO vienes a vender.</h2>
+      <p>Vienes a <b>entender cómo trabaja</b> este negocio. Eso es todo. No hay nada que te puedan "rechazar", porque no estás pidiendo nada — estás regalando atención.</p>
+    </div>
+    <div class="card">
+      <h2>🗣️ Guion de entrada (dilo tal cual)</h2>
+      <div class="say">"Hola, soy <b>${esc(cfg.miNombre)}</b>, tengo un taller acá en Coyhaique y además ayudo a negocios locales a <b>perder menos tiempo y plata en tareas repetitivas</b>."</div>
+      <div class="say">"Ando conociendo cómo trabajan los negocios del barrio. <b>¿Tiene 15 minutos?</b> No vengo a venderle nada hoy."</div>
+    </div>
+    <div class="card small">
+      <b>Reglas de oro:</b>
+      <p>👂 Escucha 70%, habla 30%. Deja que cuente su historia.<br>
+      🔢 Busca números: no "pierde tiempo" → "¿cuántas horas por semana?"<br>
+      🚫 NO ofrezcas soluciones a mitad de conversación. Anota y sigue.<br>
+      🆘 Si se estanca, aprieta el botón rojo y lee la pregunta.</p>
+    </div>
+    <button class="btn" onclick="V.estado='ent'; V.paso=0; save(); paso=0; renderPaso()">Ya entré 💪 — empezar entrevista</button>`;
+}
+
+/* ---------- render: pasos de entrevista ---------- */
+
+function header(t){
+  const pct = Math.round((paso)/(PASOS.length-1)*100);
+  return `<div class="topbar"><button class="back" onclick="renderHome()">← guardar y salir</button>
+    <b>${t}</b><span class="small dim">${paso+1}/${PASOS.length}</span></div>
+    <div class="prog"><div style="width:${pct}%"></div></div>`;
+}
+function nav(atras, sig, txtSig){
+  return `<div style="display:flex;gap:10px;margin-top:14px">
+    ${atras?`<button class="btn sec" style="flex:1" onclick="irPaso(${atras.p})">← Atrás</button>`:''}
+    <button class="btn" style="flex:2" onclick="irPaso(${sig})">${txtSig||'Siguiente →'}</button></div>`;
+}
+function irPaso(p){ paso = p; V.paso = p; save(); renderPaso(); }
+
+function renderPaso(){
+  if(!V) return renderHome();
+  sosShow();
+  if(paso===0) return renderDatos();
+  if(paso===1) return renderBloque(0);
+  if(paso===2) return renderBloque(1);
+  if(paso===3) return renderDolores();
+  if(paso===4) return renderBloque(2);
+  if(paso===5) return renderBloque(3);
+  if(paso===6) return renderFlags();
+  if(paso===7) return renderDiag();
+}
+
+function renderDatos(){
+  $('app').innerHTML = header('Datos del negocio') + `
+    <div class="card">
+      <label>Nombre del negocio</label>
+      <input type="text" id="f_nombre" value="${esc(V.negocio.nombre)}" placeholder="Ferretería Don Miguel">
+      <label>Rubro</label>
+      <div class="chips">${RUBROS.map(r=>`<span class="chip ${V.negocio.rubro===r?'on':''}" onclick="setRubro('${r}')">${r}</span>`).join('')}</div>
+      <label>Nombre del dueño / con quién hablas</label>
+      <input type="text" id="f_dueno" value="${esc(V.negocio.dueno)}" placeholder="Miguel">
+      <label>WhatsApp (para mandarle el resumen después)</label>
+      <input type="text" id="f_fono" value="${esc(V.negocio.fono)}" placeholder="+56 9 ...">
+    </div>
+    ${nav(null, 1, 'Empezar preguntas →')}`;
+  ['f_nombre','f_dueno','f_fono'].forEach(id=>{
+    $(id).addEventListener('input', e=>{
+      V.negocio[id.slice(2)==='nombre'?'nombre':id.slice(2)] = e.target.value; save();
+    });
+  });
+}
+function setRubro(r){ V.negocio.rubro = r; save(); renderDatos(); }
+
+function renderBloque(i){
+  const b = BLOQUES[i];
+  const html = b.qs.map(q=>{
+    const val = V.r[q.k]||{};
+    const chips = q.chips ? `<div class="chips">${q.chips.map(c=>
+      `<span class="chip ${val.chip===c?'on':''}" onclick="setChip('${q.k}','${esc(c)}')">${c}</span>`).join('')}</div>` : '';
+    const nota = (q.nota||!q.chips) ? `<input type="text" id="n_${q.k}" value="${esc(val.nota||'')}" placeholder="anota lo clave...">` : '';
+    return `<div class="card"><div class="say">"${q.say}"</div>${chips}${nota}</div>`;
+  }).join('');
+  $('app').innerHTML = header(`Bloque ${b.id} · ${b.titulo}`) +
+    `<p class="small dim">🎯 ${b.obj}</p>` + html +
+    nav({p:paso-1}, paso+1);
+  b.qs.forEach(q=>{
+    const el = $('n_'+q.k);
+    if(el) el.addEventListener('input', e=>{ V.r[q.k]=V.r[q.k]||{}; V.r[q.k].nota=e.target.value; save(); });
+  });
+}
+function setChip(k,c){
+  V.r[k]=V.r[k]||{};
+  V.r[k].chip = (V.r[k].chip===c ? '' : c); save(); renderPaso();
+}
+
+/* ---------- render: DOLORES (bloque C) ---------- */
+
+function renderDolores(){
+  const cards = V.dolores.map((d,i)=>{
+    const c = costoDolor(d);
+    return `<div class="dolor">
+      <div class="rowline" style="justify-content:space-between">
+        <b>Dolor ${i+1}</b>
+        <button class="back" onclick="delDolor(${i})">🗑️</button>
+      </div>
+      <label>¿Qué proceso le duele? (en sus palabras)</label>
+      <input type="text" value="${esc(d.proceso||'')}" oninput="updDolor(${i},'proceso',this.value)" placeholder="ej: pasar los pedidos del cuaderno al Excel">
+      <label>Área</label>
+      <div class="chips">${Object.entries(AREAS).map(([k,a])=>
+        `<span class="chip ${d.area===k?'on':''}" onclick="updDolor(${i},'area','${k}');renderDolores()">${a.txt}</span>`).join('')}</div>
+      <label>¿Cada cuánto pasa?</label>
+      <div class="chips">${Object.entries(FREQ).map(([k,f])=>
+        `<span class="chip ${d.freq===k?'on':''}" onclick="updDolor(${i},'freq','${k}');renderDolores()">${f.txt}</span>`).join('')}</div>
+      <label>¿Cuántas horas se van cada vez?</label>
+      <div class="chips">${['0.5','1','2','4'].map(h=>
+        `<span class="chip ${d.horas===h?'on':''}" onclick="updDolor(${i},'horas','${h}');renderDolores()">${h} h</span>`).join('')}
+        <input type="number" step="0.5" min="0" style="width:90px" value="${esc(d.horas||'')}" onchange="updDolor(${i},'horas',this.value);renderDolores()" placeholder="otra"></div>
+      <label>¿Quién lo hace?</label>
+      <div class="chips">${['El dueño','Un empleado','Ambos'].map(q=>
+        `<span class="chip ${d.quien===q?'on':''}" onclick="updDolor(${i},'quien','${q}');renderDolores()">${q}</span>`).join('')}</div>
+      ${c?`<div class="cost">💸 Le cuesta ≈ <span class="money">${clp(c)}/mes</span> <span class="dim small">(${horasMes(d).toFixed(0)} h/mes)</span></div>`:''}
+    </div>`;
+  }).join('');
+  $('app').innerHTML = header('Bloque C · Dolores 🔥') + `
+    <p class="small dim">🎯 El corazón de la visita. Por cada dolor, saca NÚMEROS.</p>
+    <div class="card">
+      <div class="say">"¿Cuál es su <b>mayor frustración</b> del día a día en el negocio?"</div>
+      <div class="say">"¿Qué tarea le <b>come más tiempo</b>?"</div>
+      <div class="say">"¿En qué se equivocan más seguido?"</div>
+      <div class="say">"¿Qué le gustaría <b>no tener que hacer nunca más</b>?"</div>
+    </div>
+    ${cards}
+    <button class="btn sec" onclick="addDolor()">➕ Anotar un dolor</button>
+    ${V.dolores.length?`<div class="card center">Pérdida total detectada: <span class="money" style="font-size:1.2rem">${clp(totalMes(V))}/mes</span></div>`:''}
+    ${nav({p:paso-1}, paso+1)}`;
+}
+function addDolor(){ V.dolores.push({proceso:'',area:'',freq:'',horas:'',quien:''}); save(); renderDolores(); }
+function delDolor(i){ V.dolores.splice(i,1); save(); renderDolores(); }
+function updDolor(i,k,v){ V.dolores[i][k]=v; save(); }
+
+/* ---------- render: SEÑALES ---------- */
+
+function renderFlags(){
+  const row = (arr, tipo, lista) => lista.map((f,i)=>{
+    const on = V.flags[tipo].includes(i);
+    return `<label class="flagrow"><input type="checkbox" ${on?'checked':''} onchange="togFlag('${tipo}',${i})">
+      <span>${tipo==='g'?'✅':'🚩'} ${f}</span></label>`;
+  }).join('');
+  $('app').innerHTML = header('Señales de la conversación') + `
+    <p class="small dim">Marca lo que pasó. Esto decide el siguiente paso.</p>
+    <div class="card"><b style="color:var(--ok)">Señales BUENAS</b>${row(V.flags.g,'g',GREEN)}</div>
+    <div class="card"><b style="color:var(--bad)">Señales MALAS</b>${row(V.flags.r,'r',RED)}</div>
+    ${nav({p:paso-1}, paso+1, 'Ver diagnóstico 🎯')}`;
+}
+function togFlag(t,i){
+  const a = V.flags[t]; const ix = a.indexOf(i);
+  if(ix>=0) a.splice(ix,1); else a.push(i);
+  save();
+}
+
+/* ---------- render: DIAGNÓSTICO ---------- */
+
+function renderDiag(){
+  sosHide();
+  V.estado='done'; V.paso=7; save();
+  const dols = [...V.dolores].filter(d=>d.proceso||d.area).sort((a,b)=>costoDolor(b)-costoDolor(a)).slice(0,3);
+  const ver = veredicto(V);
+  const tot = totalMes(V);
+  const nom = V.negocio.dueno || 'don/doña';
+  const items = dols.map((d,i)=>{
+    const a = AREAS[d.area] || AREAS.otro;
+    const c = costoDolor(d);
+    return `<div class="card2 card">
+      <div class="rowline"><span class="num">${i+1}</span><b>${esc(d.proceso)||a.txt}</b></div>
+      ${c?`<p class="small">Hoy le cuesta ≈ <span class="money">${clp(c)}/mes</span> (${horasMes(d).toFixed(0)} h de ${d.quien||'trabajo'})</p>`:''}
+      <p class="small">💡 <b>Propuesta:</b> ${a.sol}.<br><span class="dim">Rango implementación: ${a.rango}</span></p>
+    </div>`;
+  }).join('') || '<p class="dim">No se anotaron dolores. Igual manda el mensaje de agradecimiento.</p>';
+
+  const script = scriptCierre(dols, tot, nom);
+
+  $('app').innerHTML = `
+    <div class="topbar"><button class="back" onclick="renderHome()">← inicio</button>
+      <b>${esc(V.negocio.nombre)||'Diagnóstico'}</b>
+      <button class="back" onclick="paso=6;renderPaso()">✏️</button></div>
+    <div class="card center">
+      <span class="tag ${ver.cls}" style="font-size:1rem">Cliente ${ver.t}</span>
+      ${tot?`<h2 style="margin:.5em 0 0">Pierde ≈ <span class="money">${clp(tot)}/mes</span></h2>
+      <p class="dim small">${clp(tot*12)} al año en tareas que se pueden hacer solas</p>`:''}
+      <p class="small">👉 ${ver.rec}</p>
+    </div>
+    <h2>🔥 Top dolores y propuesta</h2>
+    ${items}
+    <h2>🗣️ Cierre (léelo si el cliente está caliente)</h2>
+    <pre class="script">${esc(script)}</pre>
+    <h2>📱 Seguimiento</h2>
+    <button class="btn" onclick="waResumen()">Enviar resumen por WhatsApp</button>
+    <button class="btn sec" onclick="copiarDiag()">📋 Copiar diagnóstico</button>
+    <p class="small dim center">Mándalo el MISMO día. Demuestra que escuchaste.</p>`;
+}
+
+function scriptCierre(dols, tot, nom){
+  let s = `Mire ${nom}, con lo que me contó, veo ${dols.length===1?'una cosa':dols.length+' cosas'} que se pueden mejorar al tiro:\n\n`;
+  dols.forEach((d,i)=>{
+    const c = costoDolor(d);
+    s += `${i+1}. ${d.proceso || (AREAS[d.area]||AREAS.otro).txt}`;
+    if(c) s += ` — hoy le come ${horasMes(d).toFixed(0)} horas al mes (unos ${clp(c)})`;
+    s += `\n`;
+  });
+  if(tot) s += `\nEn total son como ${clp(tot)} al mes que se le van en tareas repetitivas.\n`;
+  s += `\nYo le ofrezco partir con una asesoría de $10.000: me siento 1 hora con usted, revisamos esto en detalle y le entrego un plan concreto con presupuesto. Si no le hace sentido, quedamos ahí y no pierde nada.\n\n¿Le acomoda esta semana?`;
+  return s;
+}
+
+function msgWhatsApp(){
+  const dols = [...V.dolores].filter(d=>d.proceso||d.area).sort((a,b)=>costoDolor(b)-costoDolor(a)).slice(0,3);
+  const tot = totalMes(V);
+  const nom = V.negocio.dueno || '';
+  let m = `Hola${nom?' '+nom:''}! Soy ${cfg.miNombre}, gracias por el tiempo de hoy en ${V.negocio.nombre||'su negocio'}. 🙌\n\nLe resumo lo que entendí:\n`;
+  dols.forEach((d,i)=>{
+    const c = costoDolor(d);
+    m += `${i+1}) ${d.proceso || (AREAS[d.area]||AREAS.otro).txt}${c?` — ≈ ${horasMes(d).toFixed(0)} h/mes (${clp(c)})`:''}\n`;
+  });
+  if(tot) m += `\nO sea, unos ${clp(tot)} al mes en tareas que se pueden hacer solas.\n`;
+  m += `\nSi le interesa, hacemos la asesoría de $10.000: 1 hora, revisamos en detalle y le entrego un plan con presupuesto claro. ¿Qué día le acomoda?\n\n${cfg.miNombre} · ${cfg.miFono}`;
+  return m;
+}
+
+function waResumen(){
+  const fono = (V.negocio.fono||'').replace(/[^0-9]/g,'');
+  const url = fono ? `https://wa.me/${fono.startsWith('56')?fono:'56'+fono}?text=` : 'https://wa.me/?text=';
+  window.open(url + encodeURIComponent(msgWhatsApp()), '_blank');
+}
+
+function copiarDiag(){
+  navigator.clipboard.writeText(msgWhatsApp()).then(()=>alert('Diagnóstico copiado ✅'));
+}
+
+/* ---------- SOS ---------- */
+function sosShow(){ $('sos').style.display='block'; }
+function sosHide(){ $('sos').style.display='none'; }
+function sosOpen(){
+  const q = ASESINAS[Math.floor(Math.random()*ASESINAS.length)];
+  $('modalBox').innerHTML = `<p class="dim small center">Respira. Suelta esta pregunta y calla:</p>
+    <div class="say" style="font-size:1.15rem">"${q}"</div>
+    <button class="btn sec" onclick="sosOpen()">🎲 Otra</button>
+    <button class="btn" onclick="$('modal').style.display='none'">Listo, sigo</button>`;
+  $('modal').style.display='flex';
+}
+function modalClose(e){ if(e.target.id==='modal') $('modal').style.display='none'; }
+
+/* ---------- export / import ---------- */
+function exportar(){
+  const blob = new Blob([JSON.stringify({cfg,visitas},null,1)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `auditoria-dolores-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+function importar(inp){
+  const f = inp.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const data = JSON.parse(r.result);
+      if(!Array.isArray(data.visitas)) throw 0;
+      if(!confirm(`Importar ${data.visitas.length} visita(s)? Se suman a las actuales.`)) return;
+      const ids = new Set(visitas.map(v=>v.id));
+      data.visitas.forEach(v=>{ if(!ids.has(v.id)) visitas.push(v); });
+      visitas.sort((a,b)=>b.id-a.id);
+      if(data.cfg) { cfg = {...cfg, ...data.cfg}; saveCfg(); }
+      save(); renderHome();
+    }catch{ alert('Archivo no válido'); }
+  };
+  r.readAsText(f);
+}
+
+renderHome();
+</script>
+</body>
+</html>
